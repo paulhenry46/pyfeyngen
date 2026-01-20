@@ -24,12 +24,11 @@ class FeynmanGraph:
     def build_graph(self, structure):
         first_step = structure[0]
         
-        # Séparation des types d'éléments dans le premier bloc
         in_particles = [p for p in first_step if isinstance(p, str)]
-        in_anchors = [p for p in first_step if isinstance(p, dict)]
+        in_anchors = [p for p in first_step if isinstance(p, dict) and 'anchor' in p]
         in_cascades = [p for p in first_step if isinstance(p, list)]
 
-        # CAS 1 : Il y a des particules parentes (ex: u ubar > ...)
+        # CAS 1 : Tronc commun
         if in_particles:
             v_start = self.new_v()
             for a in in_anchors:
@@ -37,66 +36,68 @@ class FeynmanGraph:
             for p in in_particles:
                 in_node = self.new_in()
                 self.edges.append((in_node, v_start, p))
-            
-            # On lance la suite du diagramme normalement
             self._process_steps(v_start, structure[1:])
 
-        # CAS 2 : Le diagramme commence directement par des blocs (ex: (e- > @A) (e- > @A))
+        # CAS 2 : Racines multiples
         elif in_cascades:
-            # On traite chaque cascade comme une racine indépendante
             for cascade in in_cascades:
-                # Chaque racine commence par un vertex d'entrée propre
                 v_root = self.new_v()
-                
-                # On extrait la particule de départ de cette cascade
-                # Exemple pour (e- > @A) -> 'e-'
                 p_start_name = next((t for t in cascade[0] if isinstance(t, str)), "unknown")
-                
-                # On crée l'entrée physique pour cette branche
                 in_node = self.new_in()
                 self.edges.append((in_node, v_root, p_start_name))
-                
-                # On enregistre les ancres sur ce vertex de départ
                 for t in cascade[0]:
                     if isinstance(t, dict) and 'anchor' in t:
                         self._register_anchor(v_root, t)
-                
-                # On lance la récursion pour cette branche spécifique
                 self._process_steps(v_root, cascade[1:])
-            
-            # Note : On ignore structure[1:] ici car dans ce format, 
-            # tout est contenu dans les cascades initiales.
         
-        # 3. Soudure finale des cycles
         self._connect_anchors()
 
     def _process_steps(self, current_v, steps):
         if not steps: return
         step = steps[0]
 
-        particles = [item for item in step if isinstance(item, str) or isinstance(item, list)]
+        # 1. Extraction des différents types de tokens
+        # On identifie spécifiquement les dictionnaires 'loop'
+        loops = [item for item in step if isinstance(item, dict) and 'loop' in item]
         anchors = [item for item in step if isinstance(item, dict) and 'anchor' in item]
+        # Particules simples ou sous-cascades
+        real_particles = [item for item in step if isinstance(item, (str, list))]
 
+        # 2. Enregistrement des ancres sur le vertex actuel
         for a in anchors:
             self._register_anchor(current_v, a)
 
-        if not particles:
+        # 3. GESTION DES CROCHETS MULTI-PARTICULES [...]
+        if loops:
+            # On récupère la liste des particules dans le crochet
+            loop_particles = loops[0]['loop']
+            v_loop_end = self.new_v()
+            
+            # On crée autant d'arêtes parallèles que de particules spécifiées
+            for p in loop_particles:
+                self.edges.append((current_v, v_loop_end, p))
+            
+            # On poursuit le diagramme à partir de la sortie du bloc [...]
+            self._process_steps(v_loop_end, steps[1:])
+            return
+
+        # 4. GESTION CLASSIQUE (Propagation ou Branchement)
+        if not real_particles:
             self._process_steps(current_v, steps[1:])
             return
 
-        if len(particles) == 1 and not isinstance(particles[0], list):
+        if len(real_particles) == 1 and not isinstance(real_particles[0], list):
             v_next = self.new_v()
-            self.edges.append((current_v, v_next, particles[0]))
+            self.edges.append((current_v, v_next, real_particles[0]))
             self._process_steps(v_next, steps[1:])
         else:
-            for item in particles:
+            for item in real_particles:
                 if isinstance(item, list):
                     v_decay = self.new_v()
                     p_name = next((t for t in item[0] if isinstance(t, str)), "unknown")
                     for t in item[0]:
                         if isinstance(t, dict) and 'anchor' in t:
                             self._register_anchor(v_decay, t)
-                    
                     self.edges.append((current_v, v_decay, p_name))
                     self._process_steps(v_decay, item[1:])
                 else:

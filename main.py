@@ -13,7 +13,9 @@ reactions = [
     'u ubar @debut > H > (Z0 > e+ e-) (Z0 > mu+ mu-) @debut',
     'u ubar @debut > H > (Z0 > e+ e-) (@debut Z0 > mu+ mu-)',
     'e+ > (e- > @A > e-) (e- > @A > e-)',
-    '(e- > @A > e-) (e- > @A > e-)'
+    '(e- > @A > e-) (e- > @A > e-)',
+    'e+ e- > [gamma Z0 H] > mu+ mu-',
+    'H > (Z0 @link > e+ e-) (Z0 @link > mu+ mu-)'
 ]
 
 for r in reactions:
