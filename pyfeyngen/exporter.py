@@ -4,30 +4,22 @@ def generate_physical_tikz(graph):
     tikz_lines = []
     vertex_usage = {}
 
-    # ÉTAPE PRÉALABLE : On ne compte QUE si la particule est une chaîne (str)
+    # 1. FILTRAGE ET COMPTAGE (Une seule passe propre)
     path_totals = {}
     valid_edges = []
     
     for edge in graph.edges:
         src, dst, particle = edge
-        # Si par erreur 'particle' est un dict, on saute cette arête
+        # On ne traite que les vraies particules (chaînes)
         if isinstance(particle, str):
             valid_edges.append(edge)
             path_id = tuple(sorted((src, dst)))
             path_totals[path_id] = path_totals.get(path_id, 0) + 1
 
     path_current_count = {}
-    
-    # 1. ÉTAPE PRÉALABLE : Calcul des doublons pour le "bending" (boucles)
-    path_totals = {}
-    for src, dst, _ in graph.edges:
-        path_id = tuple(sorted((src, dst)))
-        path_totals[path_id] = path_totals.get(path_id, 0) + 1
-
-    path_current_count = {}
 
     # 2. GÉNÉRATION DES LIGNES
-    for src, dst, particle in graph.edges:
+    for src, dst, particle in valid_edges:
         info = get_info(particle)
         style = info['style']
         label = info['label']
@@ -39,11 +31,11 @@ def generate_physical_tikz(graph):
             current = path_current_count.get(path_id, 0)
             side_bend = "left" if current % 2 == 0 else "right"
 
-            # Correction d'orientation pour les antifermions (inversion src/dst)
+            # Correction d'orientation pour les antifermions
             if info['is_anti'] and style == 'fermion':
                 side_bend = "right" if side_bend == "left" else "left"
 
-            bend_style = f", bend {side_bend}=45"
+            bend_style = f"bend {side_bend}=45"
             path_current_count[path_id] = current + 1
         
         # --- Gestion du Label Side (Prime) ---
@@ -51,17 +43,16 @@ def generate_physical_tikz(graph):
         label_side = "'" if count_usage % 2 != 0 else "" 
         vertex_usage[src] = count_usage + 1
         
-        # --- Sécurité sur le Label ---
-        # Si la particule n'a pas de label (ex: lien d'ancre pur), on n'affiche rien
+        # --- Construction des options ---
         label_cmd = fr"edge label{label_side}=\({label}\)" if label else ""
         
-        # --- Assemblage de la ligne ---
         options = [style]
-        if bend_style: options.append(bend_style.lstrip(", "))
+        if bend_style: options.append(bend_style)
         if label_cmd: options.append(label_cmd)
         
         options_str = ", ".join(options)
 
+        # --- Assemblage final (respect du sens des fermions) ---
         if info['is_anti'] and style == 'fermion':
             line = fr"  {dst} -- [{options_str}] {src}"
         else:
@@ -69,11 +60,12 @@ def generate_physical_tikz(graph):
             
         tikz_lines.append(line)
     
-    # Utilisation du layered layout pour une meilleure gestion des cycles d'ancres
-    header = "\\feynmandiagram [horizontal=inx1 to fx1] {"
+    # Configuration du Header : 
+    # layered layout est indispensable pour les ancres et les racines multiples
+    header = "\\feynmandiagram [layered layout, horizontal=inx1 to fx1] {"
     footer = "};"
+    
     return header + "\n" + ",\n".join(tikz_lines) + "\n" + footer
-
 if __name__ == "__main__":
     from .parser import parse_reaction
     from .layout import FeynmanGraph
