@@ -4,10 +4,10 @@ reactions = [
     "e+ e- > Z0 > mu+ mu-", # Valide
     "e+ (e- > Z0",          # Erreur : Parenthèse
     "u ubar > X > e+ e-",    # Erreur : Particule X inconnue
-    'u ubar > H > (Z0 > e+ e-) (Z0 > mu+ mu-)', 
-                 'u ubar > H > (Z0 > e+ e-) Z0',
-                 'gamma > [ e+ e- ] > gamma',
-                 'e- e- > [gamma gamma] > e- e-'
+    'u ubar > H > (Z0 > e+ e-) (Z0 > mu+ mu-)', # Valide
+    'u ubar > H > (Z0 > e+ e-) Z0', # Valide
+    'gamma > [ e+ e- ] > gamma', # Valide avec Boucle
+    'e- e- > [gamma gamma] > e- e-' # Valide avec Boucle
 ]
 
 for r in reactions:
