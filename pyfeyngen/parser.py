@@ -39,16 +39,15 @@ def parse_reaction(reaction_str):
     return final_structure
 
 def _parse_step(step_str):
-    """Analyse une étape pour séparer les particules simples des blocs ( ... )"""
+    """Analyse une étape pour séparer les particules, blocs ( ) et boucles [ ]"""
     tokens = []
     i = 0
     while i < len(step_str):
-        # Sauter les espaces
         if step_str[i].isspace():
             i += 1
             continue
             
-        # Si on trouve une parenthèse, on extrait tout le bloc équilibré
+        # GESTION DES PARENTHÈSES (Branchements)
         if step_str[i] == '(':
             start = i + 1
             depth = 1
@@ -57,12 +56,25 @@ def _parse_step(step_str):
                 if step_str[i] == '(': depth += 1
                 elif step_str[i] == ')': depth -= 1
                 i += 1
-            # On parse récursivement le contenu de la parenthèse
             tokens.append(parse_reaction(step_str[start:i-1]))
+
+        # GESTION DES CROCHETS (Boucles)
+        elif step_str[i] == '[':
+            start = i + 1
+            depth = 1
+            i += 1
+            while i < len(step_str) and depth > 0:
+                if step_str[i] == '[': depth += 1
+                elif step_str[i] == ']': depth -= 1
+                i += 1
+            # On extrait les particules à l'intérieur du crochet
+            loop_content = step_str[start:i-1].split()
+            tokens.append({'loop': loop_content})
+
         else:
-            # Sinon, on lit le nom de la particule jusqu'au prochain espace ou parenthèse
+            # PARTICULES SIMPLES
             start = i
-            while i < len(step_str) and not step_str[i].isspace() and step_str[i] != '(':
+            while i < len(step_str) and not step_str[i].isspace() and step_str[i] not in '([':
                 i += 1
             token = step_str[start:i]
             if token:

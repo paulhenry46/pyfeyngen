@@ -6,6 +6,8 @@ reactions = [
     "u ubar > X > e+ e-",    # Erreur : Particule X inconnue
     'u ubar > H > (Z0 > e+ e-) (Z0 > mu+ mu-)', 
                  'u ubar > H > (Z0 > e+ e-) Z0',
+                 'gamma > [ e+ e- ] > gamma',
+                 'e- e- > [gamma gamma] > e- e-'
 ]
 
 for r in reactions:

@@ -1,75 +1,55 @@
 from .physics import get_info
 
-def generate_tikz_code(graph):
-    """
-    Transforme les arêtes du graphe en lignes TikZ.
-    Format : source -- [edge label=particule] cible
-    """
-    tikz_lines = []
-    
-    for src, dst, particle in graph.edges:
-        # On crée une ligne simple. Le style [] est vide pour l'instant.
-        line = f"  {src} -- [edge label=\\({particle}\\)] {dst}"
-        tikz_lines.append(line)
-    
-    # On assemble le tout dans l'environnement feynmandiagram
-    # 'layered layout' est crucial pour que TikZ place les vertex automatiquement
-    header = "\\feynmandiagram [ horizontal=inx1 to fx1] {"
-    footer = "};"
-    
-    return header + "\n" + ",\n".join(tikz_lines) + "\n" + footer
-
-
 def generate_physical_tikz(graph):
     tikz_lines = []
+    vertex_usage = {}
     
-    for src, dst, particle in graph.edges:
-        info = get_info(particle)
-        style = info['style']
-        label = info['label']
-        
-        # Logique des flèches pour les antifermions
-        if info['is_anti'] and (style == 'fermion' or style == 'charged boson'):
-            # On inverse le sens pour que la flèche pointe vers le vertex (remonte le temps)
-            line = fr"  {dst} -- [{style}, edge label=\({label}\)] {src}"
-        else:
-            line = fr"  {src} -- [{style}, edge label=\({label}\)] {dst}"
-            
-        tikz_lines.append(line)
-    
-    header = "\\feynmandiagram [layered layout, horizontal=inx1 to fx1] {"
-    footer = "};"
-    
-    return header + "\n" + ",\n".join(tikz_lines) + "\n" + footer
+    # ÉTAPE PRÉALABLE : Compter combien de fois chaque chemin est utilisé
+    path_totals = {}
+    for src, dst, _ in graph.edges:
+        path_id = tuple(sorted((src, dst)))
+        path_totals[path_id] = path_totals.get(path_id, 0) + 1
 
-def generate_physical_tikz(graph):
-    tikz_lines = []
-    vertex_usage = {} # Pour compter les sorties de chaque vertex
+    # ÉTAPE DE GÉNÉRATION
+    path_current_count = {} # Pour savoir si on est à la 1ère ou 2ème ligne du chemin
 
     for src, dst, particle in graph.edges:
         info = get_info(particle)
         style = info['style']
         label = info['label']
+        path_id = tuple(sorted((src, dst)))
         
-        # Gestion du côté du label (Prime)
-        # On regarde combien de fois 'src' a été utilisé
-        count = vertex_usage.get(src, 0)
-        side = "'" if count % 2 != 0 else "" # Alterne entre normal et prime
-        vertex_usage[src] = count + 1
+        # Gestion du Bending Symétrique
+        bend_style = ""
+        total_lines = path_totals[path_id]
         
-        # Logique des flèches pour les antifermions
+        if total_lines > 1:
+            # On initialise le compteur pour ce chemin si besoin
+            current = path_current_count.get(path_id, 0)
+            # La 1ère ligne va à gauche, la 2ème à droite
+            side_bend = "left" if current % 2 == 0 else "right"
+
+            if info['is_anti'] and style == 'fermion':
+                side_bend = "right" if side_bend == "left" else "left"
+                
+            bend_style = f", bend {side_bend}=45"
+            path_current_count[path_id] = current + 1
+        
+        # Gestion du Label Side (Prime)
+        count_usage = vertex_usage.get(src, 0)
+        label_side = "'" if count_usage % 2 != 0 else "" 
+        vertex_usage[src] = count_usage + 1
+        
+        # Construction de la ligne
         if info['is_anti'] and style == 'fermion':
-            # Note: pour un antifermion, le label doit rester cohérent 
-            # avec la direction physique, TikZ gère le placement par rapport au trait
-            line = fr"  {dst} -- [{style}, edge label{side}=\({label}\)] {src}"
+            line = fr"  {dst} -- [{style}{bend_style}, edge label{label_side}=\({label}\)] {src}"
         else:
-            line = fr"  {src} -- [{style}, edge label{side}=\({label}\)] {dst}"
+            line = fr"  {src} -- [{style}{bend_style}, edge label{label_side}=\({label}\)] {dst}"
             
         tikz_lines.append(line)
     
     header = "\\feynmandiagram [layered layout, horizontal=inx1 to fx1] {"
     footer = "};"
-    
     return header + "\n" + ",\n".join(tikz_lines) + "\n" + footer
 
 if __name__ == "__main__":

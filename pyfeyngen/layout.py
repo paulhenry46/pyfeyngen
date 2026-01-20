@@ -1,8 +1,8 @@
 
 class FeynmanGraph:
     def __init__(self, structure):
-        self.nodes = []      # Liste de tous les nœuds
-        self.edges = []      # Liste des connexions (from, to, particle_name)
+        self.nodes = []      
+        self.edges = []      
         self.v_count = 0
         self.in_count = 0
         self.f_count = 0
@@ -21,39 +21,44 @@ class FeynmanGraph:
         return f"fx{self.f_count}"
 
     def build_graph(self, structure):
-        # 1. Créer le premier vertex d'interaction
         v_start = self.new_v()
-        
-        # 2. Connecter les entrées au premier vertex
         for p in structure[0]:
             in_node = self.new_in()
             self.edges.append((in_node, v_start, p))
-            
-        # 3. Parcourir les étapes suivantes
         self._process_steps(v_start, structure[1:])
 
     def _process_steps(self, current_v, steps):
-        # Si plus d'étapes, on s'arrête
         if not steps: return
-
         step = steps[0]
-        # Cas A : Propagation simple vers le vertex suivant (ex: > H >)
+
+        # --- NOUVELLE LOGIQUE POUR LES BOUCLES ---
+        # Si l'étape contient un dictionnaire 'loop', c'est une bulle
+        if isinstance(step[0], dict) and 'loop' in step[0]:
+            loop_particles = step[0]['loop']
+            # On crée le vertex où la boucle se referme
+            v_loop_end = self.new_v()
+            
+            # On connecte toutes les particules de la boucle entre les mêmes deux vertex
+            for p in loop_particles:
+                self.edges.append((current_v, v_loop_end, p))
+            
+            # On continue le reste du diagramme à partir de la sortie de la boucle
+            self._process_steps(v_loop_end, steps[1:])
+            return
+
+        # --- LOGIQUE EXISTANTE (BRANCHEMENTS ET CASCADES) ---
         if len(step) == 1 and not isinstance(step[0], list):
             v_next = self.new_v()
             self.edges.append((current_v, v_next, step[0]))
             self._process_steps(v_next, steps[1:])
-        
-        # Cas B : Éclatement en plusieurs branches (ex: > (Z > ee) (Z > mumu))
         else:
             for item in step:
                 if isinstance(item, list):
-                    # C'est une sous-cascade : item[0] est le parent, item[1:] les fils
                     v_decay = self.new_v()
-                    parent_particle = item[0][0] # Ex: Z0
+                    parent_particle = item[0][0]
                     self.edges.append((current_v, v_decay, parent_particle))
                     self._process_steps(v_decay, item[1:])
                 else:
-                    # C'est une particule finale simple
                     f_node = self.new_f()
                     self.edges.append((current_v, f_node, item))
 
