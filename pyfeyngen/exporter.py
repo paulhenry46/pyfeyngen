@@ -14,7 +14,7 @@ def generate_tikz_code(graph):
     
     # On assemble le tout dans l'environnement feynmandiagram
     # 'layered layout' est crucial pour que TikZ place les vertex automatiquement
-    header = "\\feynmandiagram [layered layout, horizontal=inx1 to fx1] {"
+    header = "\\feynmandiagram [ horizontal=inx1 to fx1] {"
     footer = "};"
     
     return header + "\n" + ",\n".join(tikz_lines) + "\n" + footer
