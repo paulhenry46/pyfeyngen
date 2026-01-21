@@ -1,64 +1,66 @@
 import re
 from .errors import InvalidReactionError
 
+def _parse_step(step_str):
 def parse_reaction(reaction_str):
     """
-    Transforme une chaîne de réaction en structure de listes imbriquées.
-    Supporte les branchements (...), les boucles multi-particules [...], 
-    les ancres @ et les attributs de style {...}.
+    Transforms a reaction string into a nested list structure.
+    Supports branching (...), multi-particle loops [...],
+    anchors @, and style attributes {...}.
     """
     if not reaction_str.strip():
-        raise InvalidReactionError("La chaîne de réaction est vide.")
-    
-    # Vérification de l'équilibre des délimiteurs
+        raise InvalidReactionError("The reaction string is empty.")
+
+    # Check for balanced delimiters
     if reaction_str.count('(') != reaction_str.count(')'):
-        raise InvalidReactionError("Parenthèses non équilibrées.")
+        raise InvalidReactionError("Unbalanced parentheses.")
     if reaction_str.count('[') != reaction_str.count(']'):
-        raise InvalidReactionError("Crochets non équilibrés.")
+        raise InvalidReactionError("Unbalanced brackets.")
     if reaction_str.count('{') != reaction_str.count('}'):
-        raise InvalidReactionError("Accolades non équilibrées.")
-    
+        raise InvalidReactionError("Unbalanced braces.")
+
     s = reaction_str.strip()
     steps = []
     current_step = ""
     depth = 0
-    
-    # Étape 1 : Séparer par les '>' de premier niveau
+
+    # Step 1: Split by top-level '>'
     for char in s:
         if char == '(': depth += 1
         elif char == ')': depth -= 1
-        
+
         if char == '>' and depth == 0:
             steps.append(current_step.strip())
             current_step = ""
         else:
             current_step += char
     steps.append(current_step.strip())
-    
+
     final_structure = []
     for step in steps:
         if step:
             final_structure.append(_parse_step(step))
-        
+
     return final_structure
 
-def _parse_step(step_str):
-    """Analyse une étape pour séparer les particules, blocs ( ), boucles [ ], ancres @ et styles { }"""
+                elif step_str[i] == ')': depth -= 1
+    """
+    Analyzes a step to separate particles, blocks ( ), loops [ ], anchors @, and styles { }.
+    """
     tokens = []
     i = 0
     while i < len(step_str):
         if step_str[i].isspace():
             i += 1
             continue
-            
-        # 1. GESTION DES PARENTHÈSES (Cascades)
+
+        # 1. HANDLE PARENTHESES (Cascades)
         if step_str[i] == '(':
             start = i + 1
             depth = 1
             i += 1
             while i < len(step_str) and depth > 0:
                 if step_str[i] == '(': depth += 1
-                elif step_str[i] == ')': depth -= 1
                 i += 1
             tokens.append(parse_reaction(step_str[start:i-1]))
 

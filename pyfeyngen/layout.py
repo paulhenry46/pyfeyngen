@@ -2,14 +2,15 @@ from .logger import logger
 
 class FeynmanGraph:
     def __init__(self, structure):
-        self.nodes = []      
-        self.edges = []      
-        self.v_count = 0
-        self.in_count = 0
-        self.f_count = 0
-        self.anchor_points = {} 
-        self.vertex_styles = {}  # Stocke les styles de vertex (ex: { "vx1": "blob" })
-        
+        self.nodes = []      # List of all nodes in the graph
+        self.edges = []      # List of all edges (connections) in the graph
+        self.v_count = 0     # Counter for internal vertices
+        self.in_count = 0    # Counter for input nodes
+        self.f_count = 0     # Counter for output nodes
+        self.anchor_points = {}  # Stores anchor points for linking
+        self.vertex_styles = {}  # Stores vertex styles (e.g., { "vx1": "blob" })
+
+        # Build the graph structure from the parsed input
         self.build_graph(structure)
 
     def new_v(self):
@@ -26,37 +27,40 @@ class FeynmanGraph:
 
     def build_graph(self, structure):
         first_step = structure[0]
-        
-        # Extraction adaptée aux nouveaux types de tokens du parser
+
+        # Extract input particles, anchors, and cascades from the first step
         in_particles = [p for p in first_step if isinstance(p, (str, dict)) and 'anchor' not in str(p) and 'loop' not in str(p) and 'cascade' not in str(p)]
         in_anchors = [p for p in first_step if isinstance(p, dict) and 'anchor' in p]
         in_cascades = [p for p in first_step if isinstance(p, (list, dict)) and ('cascade' in str(p) or isinstance(p, list))]
 
         if in_particles:
             v_start = self.new_v()
+            # Register anchors for the starting vertex
             for a in in_anchors:
                 self._register_anchor(v_start, a)
+            # Add input particles as edges
             for p in in_particles:
                 p_name = p['name'] if isinstance(p, dict) else p
                 in_node = self.new_in()
                 self.edges.append((in_node, v_start, p_name))
+            # Recursively process the rest of the structure
             self._process_steps(v_start, structure[1:])
 
         elif in_cascades:
             for item in in_cascades:
                 cascade = item['cascade'] if isinstance(item, dict) else item
                 v_root = self.new_v()
-                
-                # Gestion du style blob sur la racine
+
+                # Handle blob style on the root vertex
                 if isinstance(item, dict) and item.get('style') == 'blob':
                     self.vertex_styles[v_root] = 'blob'
 
                 p_start = cascade[0][0]
                 p_name = p_start['name'] if isinstance(p_start, dict) else p_start
-                
+
                 in_node = self.new_in()
                 self.edges.append((in_node, v_root, p_name))
-                
+
                 for t in cascade[0]:
                     if isinstance(t, dict) and 'anchor' in t:
                         self._register_anchor(v_root, t)
