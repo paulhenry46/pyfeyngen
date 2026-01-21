@@ -9,7 +9,7 @@ from .logger import setup_logging, logger
 __version__ = "1.0.0"
 __author__ = "Saux Paulhenry & Contributors"
 
-def quick_render(reaction_string, debug=False):
+def quick_render(reaction_string, user_dict=None, debug=False):
     if debug:
         setup_logging(True)
     try:
@@ -26,7 +26,7 @@ def quick_render(reaction_string, debug=False):
         logger.debug("\nListe des Ancres :")
         logger.debug(graph.anchor_points)
 
-        return generate_physical_tikz(graph)
+        return generate_physical_tikz(graph, user_dict)
     except InvalidReactionError as e:
         return f"% Erreur de syntaxe : {e}"
     except UnknownParticleError as e:

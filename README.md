@@ -83,7 +83,31 @@ This will display debug messages about the graph structure and connections, usef
 
 **Function:** `get_info(particle_name)`
 
+
 * **Purpose:** A dictionary-based lookup that returns the TikZ style (`fermion`, `boson`, `scalar`, `ghost`) and the LaTeX label for a given string.
+
+**User Dictionary Feature**
+
+You can provide a custom user dictionary to override or extend the default particle definitions. This allows you to specify your own styles, labels, or properties for any particle name.
+
+**Function signature:**
+
+```python
+get_info(name, user_dict=None)
+```
+
+**Example:**
+
+```python
+custom_dict = {
+  "X": {"style": "boson", "label": "X^*", "is_anti": False},
+  "Y": {"style": "fermion", "label": "Y^-", "is_anti": True}
+}
+info = get_info("X", user_dict=custom_dict)
+# info = {"style": "boson", "label": "X^*", "is_anti": False}
+```
+
+This feature is useful for supporting custom particles or overriding the appearance of standard ones in your diagrams.
 
 ---
 

@@ -1,10 +1,5 @@
 from .physics import get_info
-
-from .physics import get_info
-
-from .physics import get_info
-
-def generate_physical_tikz(graph):
+def generate_physical_tikz(graph, user_dict=None):
     tikz_lines = []
     vertex_usage = {}
     # Ensemble pour suivre les vertex déjà déclarés avec un style
@@ -24,7 +19,7 @@ def generate_physical_tikz(graph):
 
     # 2. GÉNÉRATION DES LIGNES TIKZ
     for src, dst, particle in valid_edges:
-        info = get_info(particle)
+        info = get_info(particle, user_dict)
         style = info['style']
         label = info['label']
         path_id = tuple(sorted((src, dst)))

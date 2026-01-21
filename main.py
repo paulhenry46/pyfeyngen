@@ -23,7 +23,7 @@ reactions = [
 
 for r in reactions:
     print(f"Testing: {r}")
-    result = pyfeyngen.quick_render(r, True)
+    result = pyfeyngen.quick_render(r, debug=True)
     print(result)
     if result.startswith("%"):
         print(f"  ERROR: {result[2:]}")

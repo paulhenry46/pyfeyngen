@@ -1,5 +1,6 @@
 # physics.py
 from .errors import UnknownParticleError
+from .logger import logger
 # physics.py
 
 PARTICLES = {
@@ -29,9 +30,13 @@ PARTICLES = {
     'H':     {'style': 'scalar', 'label': 'H^{0}', 'is_anti': False}, # Style scalar = ligne tiretée ou pleine
 }
 
-def get_info(name):
-    # Retourne les infos ou un style par défaut si inconnu
-    if name not in PARTICLES:
-        #raise UnknownParticleError(f"La particule '{name}' n'est pas définie dans la bibliothèque.")
+def get_info(name, user_dict=None):
+    if user_dict == None:
+        user_dict = {}
+    if name in user_dict:
+        return user_dict[name]
+    elif name in PARTICLES:
+        return PARTICLES[name]
+    else:
+        logger.warning(f"La particule '{name}' n'est pas définie dans la bibliothèque.")
         return {'style': 'scalar', 'label': name, 'is_anti': False}
-    return PARTICLES[name]
