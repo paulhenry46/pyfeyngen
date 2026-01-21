@@ -74,7 +74,7 @@ def generate_physical_tikz(graph):
             
         tikz_lines.append(line)
     
-    header = "\\feynmandiagram [layered layout, horizontal=inx1 to fx1] {"
+    header = "\\feynmandiagram [horizontal=inx1 to fx1] {"
     footer = "};"
     
     return header + "\n" + ",\n".join(tikz_lines) + "\n" + footer
