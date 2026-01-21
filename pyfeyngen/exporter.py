@@ -2,9 +2,10 @@ from .physics import get_info
 def generate_physical_tikz(graph, user_dict=None):
     tikz_lines = []
     vertex_usage = {}
-    styled_vertices = set()  # Set to track vertices already declared with a style
+    # Set to track vertices already declared with a style
+    styled_vertices = set()
 
-    # 1. FILTER AND PRE-COUNT EDGES
+    # 1. PRE-FILTERING AND COUNTING
     path_totals = {}
     valid_edges = []
     for edge in graph.edges:
@@ -16,53 +17,51 @@ def generate_physical_tikz(graph, user_dict=None):
 
     path_current_count = {}
 
-    # 2. GENERATE TIKZ LINES
+    # 2. TIKZ LINE GENERATION
     for src, dst, particle in valid_edges:
         info = get_info(particle, user_dict)
         style = info['style']
         label = info['label']
         path_id = tuple(sorted((src, dst)))
-
-        # --- Handle vertex styles (inject only once per vertex) ---
+        
+        # --- Vertex style management (single injection) ---
         src_attr = ""
         if src in graph.vertex_styles and src not in styled_vertices:
             src_attr = f"[{graph.vertex_styles[src]}]"
             styled_vertices.add(src)
-
+        
         dst_attr = ""
         if dst in graph.vertex_styles and dst not in styled_vertices:
             dst_attr = f"[{graph.vertex_styles[dst]}]"
             styled_vertices.add(dst)
-
-        # --- Handle Multi-Bending for multiple edges between same nodes ---
+        
+        # --- Multi-bending management ---
         bend_style = ""
         total_lines = path_totals[path_id]
         if total_lines > 1:
             idx = path_current_count.get(path_id, 0)
             path_current_count[path_id] = idx + 1
-            max_bend = 50  # Maximum bend angle
+            max_bend = 50 
             step = (max_bend * 2) / (total_lines - 1)
             angle = -max_bend + (step * idx)
-            if info['is_anti'] and style == 'fermion':
-                angle = -angle
+            if info['is_anti'] and style == 'fermion': angle = -angle
             if abs(angle) > 0.1:
                 side = "left" if angle > 0 else "right"
                 bend_style = f"bend {side}={abs(int(angle))}"
-
-        # --- Alternate label side for clarity in diagrams ---
+        
+        # --- Label side management ---
         count_usage = vertex_usage.get(src, 0)
-        label_side = "'" if count_usage % 2 != 0 else ""
+        label_side = "'" if count_usage % 2 != 0 else "" 
         vertex_usage[src] = count_usage + 1
-
-        # --- Build edge options ---
+        
+        # --- Edge options construction ---
         label_cmd = fr"edge label{label_side}=\({label}\)" if label else ""
         options = [style]
-        if bend_style:
-            options.append(bend_style)
+        if bend_style: options.append(bend_style)
         if label_cmd: options.append(label_cmd)
         options_str = ", ".join(options)
 
-        # --- Assemblage final (Syntaxe vertex[style] unique) ---
+        # --- Final assembly (unique vertex[style] syntax) ---
         if info['is_anti'] and style == 'fermion':
             line = fr"  {dst}{dst_attr} -- [{options_str}] {src}{src_attr}"
         else:

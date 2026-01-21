@@ -1,17 +1,11 @@
 class FeyngenError(Exception):
-    """
-    Base class for all pyfeyngen errors.
-    """
+    """Base class for pyfeyngen errors."""
     pass
 
 class InvalidReactionError(FeyngenError):
-    """
-    Raised when the reaction string syntax is incorrect.
-    """
+    """The syntax of the string is incorrect."""
     pass
 
 class UnknownParticleError(FeyngenError):
-    """
-    Raised when a particle is not found in physics.py.
-    """
+    """A particle is not defined in physics.py."""
     pass
