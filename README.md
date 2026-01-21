@@ -1,6 +1,14 @@
-# FeynmanViz Python Library Documentation
+# pyfeyngen Python Library Documentation
 
-**FeynmanViz** is a high-level Python library designed to transform a natural, string-based particle physics syntax into LaTeX TikZ-Feynman code. It handles complex topologies, including loops, branches, and effective field theory interactions (blobs).
+**pyfeyngen** is a high-level Python library designed to transform a natural, string-based particle physics syntax into LaTeX TikZ-Feynman code. It handles complex topologies, including loops, branches, and effective field theory interactions (blobs).
+
+## Installation
+
+```bash
+pip install pyfeyngen
+```
+
+Note: This library generates TikZ code. To compile the output, you need a LaTeX distribution with the tikz-feynman package installed and use LuaLaTeX.
 
 ## 1. Core Syntax Overview
 
