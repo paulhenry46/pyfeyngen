@@ -1,6 +1,7 @@
 # physics.py
 from .errors import UnknownParticleError
 from .logger import logger
+import re
 # physics.py
 
 PARTICLES = {
@@ -30,6 +31,10 @@ PARTICLES = {
     'H':     {'style': 'scalar', 'label': 'H^{0}', 'is_anti': False}, # Style scalar = ligne tiretée ou pleine
 }
 
+GREEK_LETTERS = ['alpha', 'beta', 'gamma', 'delta', 'epsilon', 'zeta', 'eta', 
+                 'theta', 'iota', 'kappa', 'lambda', 'mu', 'nu', 'xi', 'pi', 
+                 'rho', 'sigma', 'tau', 'phi', 'chi', 'psi', 'omega']
+
 def get_info(name, user_dict=None):
     if user_dict == None:
         user_dict = {}
@@ -39,4 +44,40 @@ def get_info(name, user_dict=None):
         return PARTICLES[name]
     else:
         logger.warning(f"La particule '{name}' n'est pas définie dans la bibliothèque.")
-        return {'style': 'scalar', 'label': name, 'is_anti': False}
+
+        match = re.match(r"^([a-zA-Z]+?)(bar|\+|\-|0)?(_[a-zA-Z0-9]+)?$", name)
+
+        if not match:
+            logger.warning(f"La particule '{name}' est illisible.")
+            return {"style": "fermion", "label": name, "is_anti": False}
+
+        base, modifier, index = match.groups()
+
+        # 1. Traitement de la BASE (ex: alpha -> \alpha)
+        latex_base = rf"\{base}" if base in GREEK_LETTERS else base
+        
+        # 2. Traitement de l'INDICE (ex: _e -> _{e})
+        index_str = f"_{{{index[1:]}}}" if index else ""
+
+        # 3. ASSEMBLAGE FINAL (C'est ici qu'on transforme 'bar' en commande LaTeX)
+        is_anti = False
+        if modifier == 'bar':
+            is_anti = True
+            label = rf"\bar{{{latex_base}}}{index_str}"  # Donne \bar{\alpha}_{e}
+        elif modifier in ['+', '-', '0']:
+            label = f"{latex_base}^{{{modifier}}}{index_str}" # Donne \alpha^{+}_{e}
+            if modifier == '+' and base in ['e', 'mu', 'tau']:
+                is_anti = True
+        else:
+            label = f"{latex_base}{index_str}"
+
+        # 4. Déduction du style
+        style = "fermion"
+        if base in ['phi', 'h', 'H', 'S']: style = "scalar"
+        elif base in ['W', 'Z', 'gamma', 'g']: style = "boson" # Simplifié pour l'exemple
+
+        return {
+            "style": style,
+            "label": label,
+            "is_anti": is_anti
+        }

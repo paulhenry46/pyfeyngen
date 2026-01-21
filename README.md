@@ -44,6 +44,34 @@ Anchors allow you to connect two separate parts of a diagram without a direct fl
 
 ## 3. API Reference
 
+---
+
+### Smart Particle/Label Detection
+
+The library features smart detection of particle names and automatic LaTeX label generation. If a particle name is not found in the default or user dictionary, the system will attempt to intelligently parse the name and deduce its style and LaTeX label.
+
+**How it works:**
+- Recognizes common patterns such as Greek letters, charge modifiers (`+`, `-`, `0`), bars (antiparticles), and indices (e.g., `_e`).
+- Automatically generates the correct LaTeX label, e.g.:
+  - `mu+` → `\mu^{+}`
+  - `ubar` → `\bar{u}`
+  - `alpha_e` → `\alpha_{e}`
+  - `phi-` → `\phi^{-}`
+- Deduces the particle style (fermion, boson, scalar, etc.) based on the base name.
+- If the name cannot be parsed, a warning is logged and a generic style/label is used.
+
+**Example:**
+
+```python
+info = get_info("phi-_")
+# info = {"style": "scalar", "label": "\\phi^{-}", "is_anti": False}
+
+info = get_info("ubar")
+# info = {"style": "fermion", "label": "\\bar{u}", "is_anti": True}
+```
+
+This feature allows you to use a wide range of particle names in your diagrams without needing to predefine every possible variant.
+
 **Function:** `quick_render(reaction_string, debug=False)`
 
 * **Input:** `reaction_string` (str), `debug` (bool, optional)

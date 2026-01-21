@@ -18,7 +18,7 @@ reactions = [
     'H > (Z0  > @link e+ e-) (Z0  > @link mu+ mu-)',
     'n > @v1{blob} > p e- nubar_e',
     'e- > @box:gamma e- > @box',
-    'H > @v1{blob} > (Z0 > e+ e-) (Z0 > mu+ mu-)'
+    'pibar_e > @v1{blob} > (pi > e+ e-) (pi_e > mu+ mu-)'
 ]
 
 for r in reactions:
