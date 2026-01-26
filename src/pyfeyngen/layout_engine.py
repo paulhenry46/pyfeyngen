@@ -66,20 +66,17 @@ class LayeredLayout:
         if not self.positions:
             self.compute_layout()
 
-        # 1. On enrichit les données des nœuds avec leurs styles (blob, etc.)
+        # 1. Enrichissement des nœuds (inchangé)
         node_data = {}
         for node_id, pos in self.positions.items():
-            # On cherche le style dans le graphe, sinon "default"
-            # Vérifie si ton objet graph a bien l'attribut vertex_styles
             v_style = getattr(self.graph, 'vertex_styles', {}).get(node_id, "default")
-            
             node_data[node_id] = {
                 "x": pos[0],
                 "y": pos[1],
                 "style": v_style
             }
 
-        # 2. Construction des edges (ton code actuel est bon)
+        # 2. Comptage pour la répartition des courbes
         edge_counts = {}
         for e in self.graph.edges:
             pair = tuple(sorted((e[0], e[1])))
@@ -91,14 +88,26 @@ class LayeredLayout:
 
         for src, dst, particle_name in self.graph.edges:
             pair = tuple(sorted((src, dst)))
-            processed_pairs[pair] = processed_pairs.get(pair, 0) + 1
-            info = get_info(particle_name)
+            # On suit l'index de l'arête actuelle pour cette paire (1, 2, 3...)
+            current_idx = processed_pairs.get(pair, 0) + 1
+            processed_pairs[pair] = current_idx
             
-            is_curved = edge_counts[pair] > 1
-            bend_dir = (processed_pairs[pair] // 2 + 1) * (1 if processed_pairs[pair] % 2 == 0 else -1) if is_curved else 0
+            info = get_info(particle_name)
+            total_edges = edge_counts[pair]
+            
+            is_curved = total_edges > 1
+            bend_value = 0.0
+            
+            if is_curved:
+                # Écartement entre les courbes (ajustable selon tes préférences)
+                step = 0.4 
+                # On centre les valeurs autour de 0
+                # Ex pour 2 edges: 1 -> -0.2, 2 -> 0.2
+                # Ex pour 3 edges: 1 -> -0.4, 2 -> 0, 3 -> 0.4
+                bend_value = (current_idx - (total_edges + 1) / 2) * step
 
             geometry_edges.append({
-                "start_node": src, # Optionnel : envoyer l'ID du nœud peut aider Inkscape
+                "start_node": src,
                 "end_node": dst,
                 "start": self.positions[src],
                 "end": self.positions[dst],
@@ -106,7 +115,7 @@ class LayeredLayout:
                 "label": info.get('label', particle_name),
                 "is_anti": info.get('is_anti', False),
                 "is_curved": is_curved,
-                "bend_direction": bend_dir
+                "bend": round(bend_value, 2) # On remplace bend_direction par bend
             })
 
         return {"nodes": node_data, "edges": geometry_edges}
