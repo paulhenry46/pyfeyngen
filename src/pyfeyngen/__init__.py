@@ -50,7 +50,7 @@ def quick_render(reaction_string, user_dict=None, debug=False):
         # Return a LaTeX comment for any unexpected error
         return f"% Unexpected error: {e}"
     
-def quick_geometry(reaction_string, debug=False):
+def quick_geometry(reaction_string, x_spacing=150, y_spacing=100, debug=False):
     """
     Parse a reaction string and return node coordinates and metadata as a dictionary.
     Args:
@@ -69,7 +69,7 @@ def quick_geometry(reaction_string, debug=False):
         graph = FeynmanGraph(structure)
 
         # 2. Geometry pipeline: Layout engine
-        engine = LayeredLayout(graph, x_spacing=150, y_spacing=100)
+        engine = LayeredLayout(graph, x_spacing, y_spacing)
 
         # 3. Compute and retrieve geometry data for Inkscape
         geometry_data = engine.get_inkscape_data()
